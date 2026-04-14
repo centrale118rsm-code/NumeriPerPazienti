@@ -12,6 +12,10 @@
             --accent-color: #00f2fe;
             --accent-hover: #4facfe;
             --border-radius: 8px;
+            
+            /* Variabili dinamiche controllate da JS */
+            --print-cols: 3;
+            --print-size: 14pt;
         }
 
         * {
@@ -51,10 +55,59 @@
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+        }
+
+        details {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-radius: var(--border-radius);
+            padding: 0.5rem 1rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        summary {
+            font-weight: bold;
+            color: var(--accent-color);
+            cursor: pointer;
+            padding: 0.5rem 0;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary::after {
+            content: '▼';
+            font-size: 0.8rem;
+            color: var(--accent-color);
+        }
+
+        details[open] summary::after {
+            content: '▲';
+        }
+
+        .advanced-options {
+            padding-top: 1rem;
+            border-top: 1px solid #334155;
+            margin-top: 0.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            .advanced-options {
+                grid-template-columns: 1fr;
+            }
         }
 
         label {
@@ -63,20 +116,19 @@
             color: #cbd5e1;
         }
 
-        /* Cambiato input[type="number"] in input[type="text"] per supportare gli zeri */
-        input[type="text"], select {
+        input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #334155;
             border-radius: var(--border-radius);
-            background-color: #0f172a;
+            background-color: #1e293b;
             color: var(--text-color);
             font-size: 1rem;
             outline: none;
             transition: border-color 0.3s;
         }
 
-        input[type="text"]:focus, select:focus {
+        input:focus, select:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 5px rgba(0, 242, 254, 0.3);
         }
@@ -127,7 +179,7 @@
 
         #output {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-template-columns: repeat(var(--print-cols), 1fr);
             gap: 10px;
         }
 
@@ -139,8 +191,10 @@
             border-radius: 6px;
             font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: var(--print-size);
             color: var(--accent-color);
+            break-inside: avoid;
+            page-break-inside: avoid; 
         }
 
         @media print {
@@ -156,20 +210,20 @@
                 padding: 0;
                 margin: 0;
             }
-            .form-group, .btn-group, h1 {
+            .form-group, .btn-group, h1, details {
                 display: none !important;
             }
             #output {
                 display: grid !important;
-                grid-template-columns: repeat(3, 1fr) !important;
+                grid-template-columns: repeat(var(--print-cols), 1fr) !important;
                 gap: 5px !important;
             }
             .number-box {
                 background-color: transparent;
-                border: 1px solid #ccc;
+                border: 1px solid #000;
                 color: black;
-                font-size: 14pt;
-                padding: 8px;
+                font-size: var(--print-size);
+                padding: 8px 0; /* Padding totale verticale 16px */
             }
         }
     </style>
@@ -191,8 +245,23 @@
                 <option value="50">50 Numeri</option>
                 <option value="75">75 Numeri</option>
                 <option value="100">100 Numeri</option>
+                <option value="A4" style="font-weight:bold; color: #00f2fe; background:#0f172a;" selected>Riempi Foglio A4</option>
             </select>
         </div>
+
+        <details>
+            <summary>Opzioni Avanzate di Stampa</summary>
+            <div class="advanced-options">
+                <div class="form-group">
+                    <label for="columns">Numero Colonne:</label>
+                    <input type="number" id="columns" value="3" min="1" max="10">
+                </div>
+                <div class="form-group">
+                    <label for="fontSize">Grandezza Font (pt):</label>
+                    <input type="number" id="fontSize" value="16" min="8" max="72">
+                </div>
+            </div>
+        </details>
 
         <div class="btn-group">
             <button id="btn-generate">Genera</button>
@@ -206,30 +275,58 @@
 
     <script>
         document.getElementById('btn-generate').addEventListener('click', function() {
-            // Prendiamo il valore come stringa (testo) e togliamo eventuali spazi
             const startNumberInput = document.getElementById('startNumber').value.trim();
-            const quantity = parseInt(document.getElementById('quantity').value);
+            const quantityVal = document.getElementById('quantity').value;
+            const columns = parseInt(document.getElementById('columns').value) || 3;
+            const fontSize = parseInt(document.getElementById('fontSize').value) || 14;
             const outputDiv = document.getElementById('output');
             
             outputDiv.innerHTML = '';
 
-            // Controlla che sia stato inserito solo un numero (anche con zeri davanti)
             if (!/^\d+$/.test(startNumberInput)) {
                 alert('Inserisci un numero di partenza valido (es. 0034).');
                 return;
             }
 
-            // Calcoliamo la lunghezza della stringa originale (es. "0034" = 4)
+            document.documentElement.style.setProperty('--print-cols', columns);
+            document.documentElement.style.setProperty('--print-size', fontSize + 'pt');
+
+            let finalQuantity = 0;
+
+            if (quantityVal === 'A4') {
+                // Altezza di sicurezza per un foglio A4, escludendo intestazioni e pié di pagina del browser.
+                // Ridotto da 1000 a 950 per garantire che l'ultima riga non salti mai pagina.
+                const altezzaUtileA4Px = 950; 
+                
+                // Calcolo preciso dell'ingombro di un singolo box in fase di stampa:
+                // Font size da punti(pt) a pixel(px) (moltiplicatore ~1.333)
+                const altezzaTestoPx = fontSize * 1.333; 
+                
+                // Il padding in fase di stampa è 8px top + 8px bottom = 16px. I bordi sono 1px top + 1px bottom = 2px. Totale = 18px.
+                const paddingEBordiPx = 18; 
+                
+                const altezzaSingoloBoxPx = altezzaTestoPx + paddingEBordiPx;
+                const spazioTraBox = 5; // Corrisponde al gap: 5px del CSS in @media print
+                
+                const altezzaRigaTotale = altezzaSingoloBoxPx + spazioTraBox;
+                
+                // Calcola quante righe intere entrano nell'altezza utile senza sbordare (arrotondato per difetto)
+                const righePerPagina = Math.floor(altezzaUtileA4Px / altezzaRigaTotale);
+                
+                // Quantità totale = Righe calcolate * numero di colonne
+                finalQuantity = righePerPagina * columns;
+                
+                // Sistema di sicurezza per evitare errori se si usano font giganteschi
+                if (finalQuantity <= 0) finalQuantity = columns; 
+            } else {
+                finalQuantity = parseInt(quantityVal);
+            }
+
             const stringLength = startNumberInput.length;
-            
-            // Trasformiamo in numero per poter fare le addizioni matematiche
             const startNumber = parseInt(startNumberInput, 10);
 
-            for (let i = 0; i < quantity; i++) {
+            for (let i = 0; i < finalQuantity; i++) {
                 const currentNumber = startNumber + i;
-                
-                // Riconvertiamo in testo e aggiungiamo gli zeri iniziali mancanti
-                // padStart riempie con "0" fino a raggiungere la lunghezza desiderata
                 const formattedNumber = String(currentNumber).padStart(stringLength, '0');
                 
                 const div = document.createElement('div');
