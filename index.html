@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Sequenza Numerica</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-color: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #00f2fe;
+            --accent-hover: #4facfe;
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            background-color: var(--panel-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+            border-top: 4px solid var(--accent-color);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+
+        /* Cambiato input[type="number"] in input[type="text"] per supportare gli zeri */
+        input[type="text"], select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #334155;
+            border-radius: var(--border-radius);
+            background-color: #0f172a;
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 5px rgba(0, 242, 254, 0.3);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        #btn-generate {
+            background: linear-gradient(135deg, var(--accent-hover), var(--accent-color));
+            color: #0f172a;
+        }
+
+        #btn-generate:hover {
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
+            transform: translateY(-2px);
+        }
+
+        #btn-print {
+            background-color: #334155;
+            color: var(--text-color);
+            display: none;
+        }
+
+        #btn-print:hover {
+            background-color: #475569;
+        }
+
+        .results-wrapper {
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        #output {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .number-box {
+            background-color: var(--panel-color);
+            border: 1px solid #334155;
+            padding: 0.75rem 0;
+            text-align: center;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                color: black;
+                padding: 0;
+            }
+            .container, .results-wrapper {
+                box-shadow: none;
+                border: none;
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            .form-group, .btn-group, h1 {
+                display: none !important;
+            }
+            #output {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 5px !important;
+            }
+            .number-box {
+                background-color: transparent;
+                border: 1px solid #ccc;
+                color: black;
+                font-size: 14pt;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Sys Gen Sequenza</h1>
+        
+        <div class="form-group">
+            <label for="startNumber">Numero di partenza:</label>
+            <input type="text" id="startNumber" inputmode="numeric" pattern="[0-9]*" placeholder="Es. 001" value="001" required>
+        </div>
+
+        <div class="form-group">
+            <label for="quantity">Quantità da generare:</label>
+            <select id="quantity">
+                <option value="25">25 Numeri</option>
+                <option value="50">50 Numeri</option>
+                <option value="75">75 Numeri</option>
+                <option value="100">100 Numeri</option>
+            </select>
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-generate">Genera</button>
+            <button id="btn-print" onclick="window.print()">Stampa</button>
+        </div>
+    </div>
+
+    <div class="results-wrapper">
+        <div id="output"></div>
+    </div>
+
+    <script>
+        document.getElementById('btn-generate').addEventListener('click', function() {
+            // Prendiamo il valore come stringa (testo) e togliamo eventuali spazi
+            const startNumberInput = document.getElementById('startNumber').value.trim();
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const outputDiv = document.getElementById('output');
+            
+            outputDiv.innerHTML = '';
+
+            // Controlla che sia stato inserito solo un numero (anche con zeri davanti)
+            if (!/^\d+$/.test(startNumberInput)) {
+                alert('Inserisci un numero di partenza valido (es. 0034).');
+                return;
+            }
+
+            // Calcoliamo la lunghezza della stringa originale (es. "0034" = 4)
+            const stringLength = startNumberInput.length;
+            
+            // Trasformiamo in numero per poter fare le addizioni matematiche
+            const startNumber = parseInt(startNumberInput, 10);
+
+            for (let i = 0; i < quantity; i++) {
+                const currentNumber = startNumber + i;
+                
+                // Riconvertiamo in testo e aggiungiamo gli zeri iniziali mancanti
+                // padStart riempie con "0" fino a raggiungere la lunghezza desiderata
+                const formattedNumber = String(currentNumber).padStart(stringLength, '0');
+                
+                const div = document.createElement('div');
+                div.className = 'number-box';
+                div.textContent = formattedNumber;
+                outputDiv.appendChild(div);
+            }
+
+            document.getElementById('btn-print').style.display = 'block';
+        });
+    </script>
+
+</body>
+</html>
