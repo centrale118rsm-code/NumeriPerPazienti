@@ -190,17 +190,16 @@
             text-align: center;
             border-radius: 6px;
             font-family: 'Courier New', Courier, monospace;
-            font-weight: bold;
+            /* font-weight: bold rimosso per lasciare il testo normale */
             font-size: var(--print-size);
             color: var(--accent-color);
             break-inside: avoid;
             page-break-inside: avoid; 
         }
 
-        /* Nuova regola per stilizzare la sottolineatura del 6 e del 9 */
         .number-box u {
             text-decoration: underline;
-            text-underline-offset: 3px; /* Abbassa leggermente la linea per renderla più leggibile */
+            text-underline-offset: 3px;
         }
 
         @media print {
@@ -229,9 +228,8 @@
                 border: 1px solid #000;
                 color: black;
                 font-size: var(--print-size);
-                padding: 8px 0; /* Padding totale verticale 16px */
+                padding: 8px 0;
             }
-            /* Assicuriamoci che la sottolineatura si veda in stampa */
             .number-box u {
                 text-decoration-thickness: 1px;
             }
@@ -326,15 +324,12 @@
                 const currentNumber = startNumber + i;
                 const formattedNumber = String(currentNumber).padStart(stringLength, '0');
                 
-                // --- MODIFICA CHIAVE QUI ---
-                // Sostituiamo ogni "6" e ogni "9" con la loro versione circondata dai tag <u>
                 const styledNumber = formattedNumber
                     .replace(/6/g, '<u>6</u>')
                     .replace(/9/g, '<u>9</u>');
                 
                 const div = document.createElement('div');
                 div.className = 'number-box';
-                // Usiamo innerHTML al posto di textContent per far interpretare i tag <u> al browser
                 div.innerHTML = styledNumber; 
                 outputDiv.appendChild(div);
             }
