@@ -197,6 +197,12 @@
             page-break-inside: avoid; 
         }
 
+        /* Nuova regola per stilizzare la sottolineatura del 6 e del 9 */
+        .number-box u {
+            text-decoration: underline;
+            text-underline-offset: 3px; /* Abbassa leggermente la linea per renderla più leggibile */
+        }
+
         @media print {
             body {
                 background-color: white;
@@ -224,6 +230,10 @@
                 color: black;
                 font-size: var(--print-size);
                 padding: 8px 0; /* Padding totale verticale 16px */
+            }
+            /* Assicuriamoci che la sottolineatura si veda in stampa */
+            .number-box u {
+                text-decoration-thickness: 1px;
             }
         }
     </style>
@@ -294,29 +304,16 @@
             let finalQuantity = 0;
 
             if (quantityVal === 'A4') {
-                // Altezza di sicurezza per un foglio A4, escludendo intestazioni e pié di pagina del browser.
-                // Ridotto da 1000 a 950 per garantire che l'ultima riga non salti mai pagina.
                 const altezzaUtileA4Px = 950; 
-                
-                // Calcolo preciso dell'ingombro di un singolo box in fase di stampa:
-                // Font size da punti(pt) a pixel(px) (moltiplicatore ~1.333)
                 const altezzaTestoPx = fontSize * 1.333; 
-                
-                // Il padding in fase di stampa è 8px top + 8px bottom = 16px. I bordi sono 1px top + 1px bottom = 2px. Totale = 18px.
                 const paddingEBordiPx = 18; 
-                
                 const altezzaSingoloBoxPx = altezzaTestoPx + paddingEBordiPx;
-                const spazioTraBox = 5; // Corrisponde al gap: 5px del CSS in @media print
-                
+                const spazioTraBox = 5; 
                 const altezzaRigaTotale = altezzaSingoloBoxPx + spazioTraBox;
                 
-                // Calcola quante righe intere entrano nell'altezza utile senza sbordare (arrotondato per difetto)
                 const righePerPagina = Math.floor(altezzaUtileA4Px / altezzaRigaTotale);
-                
-                // Quantità totale = Righe calcolate * numero di colonne
                 finalQuantity = righePerPagina * columns;
                 
-                // Sistema di sicurezza per evitare errori se si usano font giganteschi
                 if (finalQuantity <= 0) finalQuantity = columns; 
             } else {
                 finalQuantity = parseInt(quantityVal);
@@ -329,9 +326,16 @@
                 const currentNumber = startNumber + i;
                 const formattedNumber = String(currentNumber).padStart(stringLength, '0');
                 
+                // --- MODIFICA CHIAVE QUI ---
+                // Sostituiamo ogni "6" e ogni "9" con la loro versione circondata dai tag <u>
+                const styledNumber = formattedNumber
+                    .replace(/6/g, '<u>6</u>')
+                    .replace(/9/g, '<u>9</u>');
+                
                 const div = document.createElement('div');
                 div.className = 'number-box';
-                div.textContent = formattedNumber;
+                // Usiamo innerHTML al posto di textContent per far interpretare i tag <u> al browser
+                div.innerHTML = styledNumber; 
                 outputDiv.appendChild(div);
             }
 
